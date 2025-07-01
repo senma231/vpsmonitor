@@ -1,0 +1,23 @@
+# Cloudflare Pages Redirects Configuration
+# 配置URL重定向和代理规则
+
+# API代理到Workers
+/api/* https://api.your-domain.workers.dev/:splat 200
+/ws https://api.your-domain.workers.dev/ws 200
+
+# SPA路由 - 所有未匹配的路径重定向到index.html
+/* /index.html 200
+
+# 健康检查
+/health /api/health 200
+
+# 旧版本兼容性重定向
+/monitor/* /servers/:splat 301
+/dashboard /  301
+
+# 静态资源优化
+/favicon.ico /assets/favicon.ico 200
+
+# 错误页面
+/404 /index.html 404
+/500 /index.html 500

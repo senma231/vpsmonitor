@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="VPS Monitor - 云原生服务器监控系统" />
+  <meta name="keywords" content="VPS,监控,服务器,Cloudflare,实时监控" />
+  <meta name="author" content="VPS Monitor Team" />
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="VPS Monitor" />
+  <meta property="og:description" content="云原生服务器监控系统" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://monitor.your-domain.com" />
+  <meta property="og:image" content="/assets/og-image.png" />
+  
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="VPS Monitor" />
+  <meta name="twitter:description" content="云原生服务器监控系统" />
+  <meta name="twitter:image" content="/assets/twitter-image.png" />
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" />
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json" />
+  
+  <!-- Theme Color -->
+  <meta name="theme-color" content="#165dff" />
+  <meta name="msapplication-TileColor" content="#165dff" />
+  
+  <!-- Preconnect -->
+  <link rel="preconnect" href="https://api.your-domain.workers.dev" />
+  <link rel="dns-prefetch" href="https://api.your-domain.workers.dev" />
+  
+  <!-- Security -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: https:;
+    font-src 'self' data:;
+    connect-src 'self' https://api.your-domain.workers.dev wss://api.your-domain.workers.dev;
+    worker-src 'self';
+    manifest-src 'self';
+  " />
+  
+  <title>VPS Monitor - 云原生服务器监控系统</title>
+  
+  <!-- Loading Styles -->
+  <style>
+    #loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #165dff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .loading-text {
+      color: #666;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    
+    .loading-progress {
+      width: 200px;
+      height: 4px;
+      background: #f3f3f3;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    
+    .loading-progress-bar {
+      height: 100%;
+      background: #165dff;
+      border-radius: 2px;
+      animation: progress 2s ease-in-out infinite;
+    }
+    
+    @keyframes progress {
+      0% { width: 0%; }
+      50% { width: 70%; }
+      100% { width: 100%; }
+    }
+    
+    /* 隐藏加载屏幕 */
+    .loaded #loading {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Loading Screen -->
+  <div id="loading">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">正在加载 VPS Monitor...</div>
+    <div class="loading-progress">
+      <div class="loading-progress-bar"></div>
+    </div>
+  </div>
+  
+  <!-- App Container -->
+  <div id="app"></div>
+  
+  <!-- Scripts -->
+  <script type="module" src="/src/main.js"></script>
+  
+  <!-- Service Worker Registration -->
+  <script>
+    // 注册Service Worker
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('SW registered: ', registration);
+          })
+          .catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+      });
+    }
+    
+    // 隐藏加载屏幕
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.body.classList.add('loaded');
+      }, 1000);
+    });
+    
+    // 错误处理
+    window.addEventListener('error', (event) => {
+      console.error('Global error:', event.error);
+    });
+    
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('Unhandled promise rejection:', event.reason);
+    });
+  </script>
+  
+  <!-- Analytics (可选) -->
+  <!-- 
+  <script async src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'GA_TRACKING_ID');
+  </script>
+  -->
+</body>
+</html>

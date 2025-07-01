@@ -1,0 +1,96 @@
+{
+  "name": "vps-monitor-workers",
+  "version": "1.0.0",
+  "description": "VPS Monitor Cloudflare Workers Backend",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
+    "build": "echo 'No build step required for Workers'",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "format": "prettier --write src/",
+    "db:migrate": "wrangler d1 execute vps-monitor --file=../database/schema.sql",
+    "db:seed": "wrangler d1 execute vps-monitor --file=../database/seed.sql",
+    "db:backup": "wrangler d1 export vps-monitor --output=backup.sql",
+    "logs": "wrangler tail",
+    "logs:production": "wrangler tail --env production",
+    "secret:set": "wrangler secret put",
+    "secret:list": "wrangler secret list",
+    "kv:create": "wrangler kv:namespace create CACHE",
+    "kv:list": "wrangler kv:key list --binding CACHE",
+    "publish": "npm run deploy:production"
+  },
+  "dependencies": {
+    "@cloudflare/workers-types": "^4.20231218.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.55.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "prettier": "^3.1.1",
+    "vitest": "^1.0.4",
+    "wrangler": "^3.22.1"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "vps",
+    "monitor",
+    "d1",
+    "serverless"
+  ],
+  "author": "VPS Monitor Team",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/senma231/vpsmonitor.git",
+    "directory": "workers"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "eslintConfig": {
+    "env": {
+      "es2022": true,
+      "worker": true
+    },
+    "extends": [
+      "eslint:recommended",
+      "prettier"
+    ],
+    "plugins": [
+      "prettier"
+    ],
+    "rules": {
+      "prettier/prettier": "error",
+      "no-console": "warn",
+      "no-unused-vars": "error",
+      "prefer-const": "error"
+    },
+    "parserOptions": {
+      "ecmaVersion": 2022,
+      "sourceType": "module"
+    }
+  },
+  "prettier": {
+    "semi": true,
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "es5",
+    "printWidth": 100,
+    "bracketSpacing": true,
+    "arrowParens": "avoid"
+  },
+  "vitest": {
+    "environment": "miniflare",
+    "testMatch": [
+      "**/*.test.js"
+    ]
+  }
+}
