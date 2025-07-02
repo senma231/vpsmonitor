@@ -1,0 +1,393 @@
+/**
+ * Akile Monitor 主题样式
+ * 仿照 cpu.icu 的设计风格
+ */
+
+/* 全局变量 */
+:root {
+  --akile-primary: #1890ff;
+  --akile-success: #52c41a;
+  --akile-warning: #faad14;
+  --akile-error: #ff4d4f;
+  --akile-bg: #f5f5f5;
+  --akile-card-bg: #ffffff;
+  --akile-border: #d9d9d9;
+  --akile-text: #262626;
+  --akile-text-secondary: #8c8c8c;
+  --akile-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --akile-radius: 6px;
+  --akile-header-height: 64px;
+  --akile-footer-height: 48px;
+}
+
+/* 全局重置 */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--akile-bg);
+  color: var(--akile-text);
+  line-height: 1.5;
+}
+
+/* 容器 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* 顶部导航栏 */
+.akile-header {
+  background: var(--akile-card-bg);
+  border-bottom: 1px solid var(--akile-border);
+  height: var(--akile-header-height);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: var(--akile-shadow);
+}
+
+.akile-header .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--akile-primary);
+}
+
+.logo-text {
+  font-weight: 700;
+}
+
+/* 导航菜单 */
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  color: var(--akile-text);
+  text-decoration: none;
+  border-radius: var(--akile-radius);
+  transition: all 0.2s;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.nav-item:hover {
+  background-color: #f0f0f0;
+  color: var(--akile-primary);
+}
+
+.nav-item.active {
+  background-color: var(--akile-primary);
+  color: white;
+}
+
+/* 右侧操作区 */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--akile-text-secondary);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--akile-text-secondary);
+}
+
+.status-dot.success {
+  background-color: var(--akile-success);
+}
+
+.status-dot.error {
+  background-color: var(--akile-error);
+}
+
+.refresh-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: var(--akile-radius);
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--akile-text-secondary);
+}
+
+.refresh-btn:hover {
+  background-color: #f0f0f0;
+  color: var(--akile-primary);
+}
+
+.refresh-btn.loading {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 主内容区 */
+.akile-main {
+  min-height: calc(100vh - var(--akile-header-height) - var(--akile-footer-height));
+  padding: 24px 0;
+}
+
+/* 卡片样式 */
+.akile-card {
+  background: var(--akile-card-bg);
+  border-radius: var(--akile-radius);
+  box-shadow: var(--akile-shadow);
+  border: 1px solid var(--akile-border);
+  margin-bottom: 16px;
+}
+
+.akile-card-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--akile-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.akile-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.akile-card-body {
+  padding: 20px;
+}
+
+/* 统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--akile-card-bg);
+  padding: 20px;
+  border-radius: var(--akile-radius);
+  box-shadow: var(--akile-shadow);
+  border: 1px solid var(--akile-border);
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--akile-primary);
+}
+
+.stat-label {
+  font-size: 14px;
+  color: var(--akile-text-secondary);
+}
+
+/* 服务器列表 */
+.server-list {
+  display: grid;
+  gap: 16px;
+}
+
+.server-item {
+  background: var(--akile-card-bg);
+  border: 1px solid var(--akile-border);
+  border-radius: var(--akile-radius);
+  padding: 16px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.server-item:hover {
+  box-shadow: var(--akile-shadow);
+  border-color: var(--akile-primary);
+}
+
+.server-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.server-name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.server-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.server-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 12px;
+}
+
+.metric {
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.metric-label {
+  font-size: 12px;
+  color: var(--akile-text-secondary);
+}
+
+/* 底部 */
+.akile-footer {
+  background: var(--akile-card-bg);
+  border-top: 1px solid var(--akile-border);
+  height: var(--akile-footer-height);
+  display: flex;
+  align-items: center;
+}
+
+.akile-footer .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.footer-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 12px;
+}
+
+.stat-item {
+  color: var(--akile-text-secondary);
+}
+
+.stat-item strong {
+  color: var(--akile-primary);
+  font-weight: 600;
+}
+
+.footer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--akile-text-secondary);
+}
+
+.footer-info a {
+  color: var(--akile-primary);
+  text-decoration: none;
+}
+
+.footer-info a:hover {
+  text-decoration: underline;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 12px;
+  }
+  
+  .header-nav {
+    display: none;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .server-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .footer-stats {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .server-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 加载动画 */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid var(--akile-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* 过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}

@@ -1,74 +1,82 @@
 <template>
   <div id="app">
-    <a-layout class="layout">
-      <!-- 顶部导航 -->
-      <a-layout-header class="header">
-        <div class="header-content">
-          <div class="logo">
-            <icon-desktop />
-            <span>VPS Monitor</span>
+    <!-- 主布局 - Akile风格 -->
+    <div class="akile-layout">
+      <!-- 顶部导航栏 -->
+      <header class="akile-header">
+        <div class="container">
+          <div class="header-left">
+            <div class="logo">
+              <icon-desktop />
+              <span class="logo-text">VPS Monitor</span>
+            </div>
           </div>
-          
-          <a-menu
-            mode="horizontal"
-            :selected-keys="[currentRoute]"
-            class="nav-menu"
-            @menu-item-click="handleMenuClick"
-          >
-            <a-menu-item key="/">
-              <icon-dashboard />
-              仪表板
-            </a-menu-item>
-            <a-menu-item key="/servers">
-              <icon-computer />
-              服务器
-            </a-menu-item>
-            <a-menu-item key="/settings">
-              <icon-settings />
-              设置
-            </a-menu-item>
-          </a-menu>
 
-          <div class="header-actions">
-            <!-- 连接状态 -->
-            <a-badge :status="connectionStatus" :text="connectionText" />
-            
-            <!-- 刷新按钮 -->
-            <a-button
-              type="text"
-              :loading="refreshing"
+          <nav class="header-nav">
+            <a
+              v-for="item in navItems"
+              :key="item.path"
+              :class="['nav-item', { active: currentRoute === item.path }]"
+              @click="handleMenuClick(item.path)"
+            >
+              <component :is="item.icon" />
+              {{ item.title }}
+            </a>
+          </nav>
+
+          <div class="header-right">
+            <div class="status-indicator">
+              <span :class="['status-dot', connectionStatus]"></span>
+              <span class="status-text">{{ connectionText }}</span>
+            </div>
+            <button
+              class="refresh-btn"
+              :class="{ loading: refreshing }"
               @click="handleRefresh"
             >
               <icon-refresh />
-            </a-button>
+            </button>
           </div>
         </div>
-      </a-layout-header>
+      </header>
 
-      <!-- 主内容区域 -->
-      <a-layout-content class="content">
-        <div class="content-wrapper">
+      <!-- 主内容区 -->
+      <main class="akile-main">
+        <div class="container">
           <router-view v-slot="{ Component }">
             <transition name="fade" mode="out-in">
               <component :is="Component" />
             </transition>
           </router-view>
         </div>
-      </a-layout-content>
+      </main>
 
-      <!-- 底部 -->
-      <a-layout-footer class="footer">
-        <div class="footer-content">
-          <span>VPS Monitor © 2024</span>
-          <span>
-            在线服务器: {{ onlineServers }} / {{ totalServers }}
-          </span>
-          <span>
-            最后更新: {{ lastUpdateTime }}
-          </span>
+      <!-- 底部信息 -->
+      <footer class="akile-footer">
+        <div class="container">
+          <div class="footer-stats">
+            <span class="stat-item">
+              <strong>{{ totalServers }}</strong> 台服务器
+            </span>
+            <span class="stat-item">
+              <strong>{{ onlineServers }}</strong> 在线
+            </span>
+            <span class="stat-item">
+              最后更新: {{ formatTime(lastUpdateTime, 'HH:mm:ss') }}
+            </span>
+          </div>
+          <div class="footer-info">
+            <span>VPS Monitor v1.0.0</span>
+            <span>•</span>
+            <a href="https://github.com/senma231/vpsmonitor" target="_blank">
+              GitHub
+            </a>
+            <span>•</span>
+            <span>基于 Cloudflare 构建</span>
+          </div>
         </div>
-      </a-layout-footer>
-    </a-layout>
+      </footer>
+    </div>
 
     <!-- 全局加载遮罩 -->
     <a-spin
@@ -121,15 +129,40 @@ export default {
     const connectionStatus = ref('default')
     const connectionText = ref('未连接')
 
+    // 导航菜单项
+    const navItems = [
+      {
+        path: '/',
+        title: '仪表板',
+        icon: 'IconDashboard'
+      },
+      {
+        path: '/servers',
+        title: '服务器',
+        icon: 'IconComputer'
+      },
+      {
+        path: '/settings',
+        title: '设置',
+        icon: 'IconSettings'
+      }
+    ]
+
     // 计算属性
     const currentRoute = computed(() => route.path)
     const totalServers = ref(0)
     const onlineServers = ref(0)
 
+    // 格式化时间函数
+    const formatTime = (time, format = 'YYYY-MM-DD HH:mm:ss') => {
+      if (!time) return '-'
+      return new Date(time).toLocaleString('zh-CN')
+    }
+
     // 方法
-    const handleMenuClick = (key) => {
-      if (key !== route.path) {
-        router.push(key)
+    const handleMenuClick = (path) => {
+      if (path !== route.path) {
+        router.push(path)
       }
     }
 
@@ -214,10 +247,12 @@ export default {
       onlineServers,
       connectionStatus,
       connectionText,
+      navItems,
 
       // 方法
       handleMenuClick,
-      handleRefresh
+      handleRefresh,
+      formatTime
     }
   }
 }

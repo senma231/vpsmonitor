@@ -9,6 +9,7 @@ import { createPinia } from 'pinia'
 import ArcoVue from '@arco-design/web-vue'
 import ArcoVueIcon from '@arco-design/web-vue/es/icon'
 import '@arco-design/web-vue/dist/arco.css'
+import './styles/akile-theme.css'
 
 import App from './App.vue'
 import Dashboard from './views/Dashboard.vue'
