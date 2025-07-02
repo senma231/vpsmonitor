@@ -163,17 +163,54 @@ export default {
       refreshList()
     }
     
-    const handleAddServer = () => {
-      console.log('Adding server:', newServer.value)
-      showAddModal.value = false
-      // 重置表单
-      newServer.value = {
-        name: '',
-        ip: '',
-        location: '',
-        description: ''
+    const handleAddServer = async () => {
+      try {
+        // 验证必填字段
+        if (!newServer.value.name || !newServer.value.ip) {
+          window.$notification?.error({
+            title: '添加失败',
+            content: '请填写服务器名称和IP地址'
+          })
+          return
+        }
+
+        // 调用API添加服务器
+        const serverData = {
+          name: newServer.value.name,
+          ip_address: newServer.value.ip,
+          location: newServer.value.location || '',
+          description: newServer.value.description || '',
+          monitor_method: 'both', // 默认使用混合监控
+          status: 'unknown'
+        }
+
+        console.log('Adding server:', serverData)
+        await apiClient.createServer(serverData)
+
+        // 显示成功消息
+        window.$notification?.success({
+          title: '添加成功',
+          content: `服务器 ${newServer.value.name} 已添加`
+        })
+
+        // 关闭模态框并重置表单
+        showAddModal.value = false
+        newServer.value = {
+          name: '',
+          ip: '',
+          location: '',
+          description: ''
+        }
+
+        // 刷新列表
+        await refreshList()
+      } catch (error) {
+        console.error('Failed to add server:', error)
+        window.$notification?.error({
+          title: '添加失败',
+          content: error.message || '服务器添加失败，请重试'
+        })
       }
-      refreshList()
     }
     
     const editServer = (server) => {

@@ -146,7 +146,13 @@ export const apiClient = {
    * 创建服务器
    */
   async createServer(serverData) {
-    return await api.post('/servers', serverData)
+    try {
+      const response = await api.post('/servers', serverData)
+      return response
+    } catch (error) {
+      console.error('Failed to create server:', error)
+      throw new Error(error.response?.data?.message || '创建服务器失败')
+    }
   },
   
   /**
