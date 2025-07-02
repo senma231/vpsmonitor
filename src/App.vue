@@ -5,7 +5,7 @@
       <a-layout-header class="header">
         <div class="header-content">
           <div class="logo">
-            <icon-monitor />
+            <icon-desktop />
             <span>VPS Monitor</span>
           </div>
           
@@ -90,37 +90,41 @@
 <script>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useServerStore } from './stores/server'
-import { useWebSocket } from './utils/websocket'
-import { formatTime } from './utils/helpers'
+import {
+  IconDesktop,
+  IconDashboard,
+  IconComputer,
+  IconSettings,
+  IconRefresh,
+  IconLoading
+} from '@arco-design/web-vue/es/icon'
 
 export default {
   name: 'App',
+  components: {
+    IconDesktop,
+    IconDashboard,
+    IconComputer,
+    IconSettings,
+    IconRefresh,
+    IconLoading
+  },
   setup() {
     const router = useRouter()
     const route = useRoute()
-    const serverStore = useServerStore()
-    
+
     // 响应式数据
     const globalLoading = ref(false)
     const loadingText = ref('加载中...')
     const refreshing = ref(false)
     const lastUpdateTime = ref(new Date())
-
-    // WebSocket连接
-    const { 
-      connectionStatus, 
-      connectionText, 
-      connect, 
-      disconnect 
-    } = useWebSocket()
+    const connectionStatus = ref('default')
+    const connectionText = ref('未连接')
 
     // 计算属性
     const currentRoute = computed(() => route.path)
-    const totalServers = computed(() => serverStore.servers.length)
-    const onlineServers = computed(() => 
-      serverStore.servers.filter(s => s.status === 'online').length
-    )
+    const totalServers = ref(0)
+    const onlineServers = ref(0)
 
     // 方法
     const handleMenuClick = (key) => {
@@ -132,9 +136,10 @@ export default {
     const handleRefresh = async () => {
       refreshing.value = true
       try {
-        await serverStore.fetchServers()
+        // 模拟数据刷新
+        await new Promise(resolve => setTimeout(resolve, 1000))
         lastUpdateTime.value = new Date()
-        
+
         // 显示成功通知
         showNotification('数据已刷新', 'success')
       } catch (error) {
@@ -160,13 +165,17 @@ export default {
       loadingText.value = '初始化应用...'
 
       try {
-        // 加载服务器数据
+        // 模拟加载服务器数据
         loadingText.value = '加载服务器数据...'
-        await serverStore.fetchServers()
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        totalServers.value = 5
+        onlineServers.value = 4
 
-        // 建立WebSocket连接
+        // 模拟建立WebSocket连接
         loadingText.value = '建立实时连接...'
-        await connect()
+        await new Promise(resolve => setTimeout(resolve, 500))
+        connectionStatus.value = 'success'
+        connectionText.value = '已连接'
 
         lastUpdateTime.value = new Date()
       } catch (error) {
@@ -191,7 +200,6 @@ export default {
       // 清理定时器
       onUnmounted(() => {
         clearInterval(refreshInterval)
-        disconnect()
       })
     })
 
@@ -206,11 +214,10 @@ export default {
       onlineServers,
       connectionStatus,
       connectionText,
-      
+
       // 方法
       handleMenuClick,
-      handleRefresh,
-      formatTime
+      handleRefresh
     }
   }
 }
