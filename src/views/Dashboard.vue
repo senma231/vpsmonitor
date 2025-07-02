@@ -112,6 +112,7 @@
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { IconRefresh } from '@arco-design/web-vue/es/icon'
+import { apiClient } from '@/utils/api'
 
 export default {
   name: 'Dashboard',
@@ -136,50 +137,46 @@ export default {
     const refreshData = async () => {
       loading.value = true
       try {
-        // 模拟数据加载
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
+        // 从API获取真实数据
+        const servers = await apiClient.getServers()
+
+        // 计算统计信息
+        const totalServers = servers.length
+        const onlineServers = servers.filter(s => s.status === 'online').length
+        const offlineServers = totalServers - onlineServers
+
         stats.value = {
-          totalServers: 5,
-          onlineServers: 4,
-          offlineServers: 1,
-          alerts: 2
+          totalServers,
+          onlineServers,
+          offlineServers,
+          alerts: 0 // 暂时设为0，后续可以从API获取
         }
-        
-        recentServers.value = [
-          {
-            name: 'web-server-01',
-            location: '香港',
-            status: 'online',
-            uptime: '15天 3小时',
-            cpu: 25,
-            memory: 68,
-            disk: 45,
-            ping: 12
-          },
-          {
-            name: 'db-server-01',
-            location: '新加坡',
-            status: 'online',
-            uptime: '8天 12小时',
-            cpu: 15,
-            memory: 82,
-            disk: 67,
-            ping: 28
-          },
-          {
-            name: 'cache-server-01',
-            location: '东京',
-            status: 'offline',
-            uptime: '离线',
-            cpu: 0,
-            memory: 0,
-            disk: 0,
-            ping: 999
-          }
-        ]
+
+        // 设置服务器列表（最多显示5个）
+        recentServers.value = servers.slice(0, 5).map(server => ({
+          name: server.name,
+          location: server.location || '未知',
+          status: server.status || 'unknown',
+          uptime: server.uptime || '未知',
+          cpu: server.cpu_usage || 0,
+          memory: server.memory_usage || 0,
+          disk: server.disk_usage || 0,
+          ping: server.ping || 0
+        }))
+
+        console.log('Dashboard data loaded:', { stats: stats.value, servers: recentServers.value })
+
       } catch (error) {
         console.error('Failed to load dashboard data:', error)
+
+        // 如果API失败，显示空状态
+        stats.value = {
+          totalServers: 0,
+          onlineServers: 0,
+          offlineServers: 0,
+          alerts: 0
+        }
+        recentServers.value = []
       } finally {
         loading.value = false
       }

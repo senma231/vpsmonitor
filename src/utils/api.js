@@ -126,7 +126,13 @@ export const apiClient = {
    * 获取所有服务器
    */
   async getServers() {
-    return await api.get('/servers')
+    try {
+      const response = await api.get('/servers')
+      return response || []
+    } catch (error) {
+      console.error('Failed to get servers:', error)
+      return []
+    }
   },
   
   /**

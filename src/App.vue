@@ -106,6 +106,7 @@ import {
   IconRefresh,
   IconLoading
 } from '@arco-design/web-vue/es/icon'
+import { apiClient } from '@/utils/api'
 
 export default {
   name: 'App',
@@ -169,12 +170,15 @@ export default {
     const handleRefresh = async () => {
       refreshing.value = true
       try {
-        // 模拟数据刷新
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // 刷新服务器数据
+        const servers = await apiClient.getServers()
+        totalServers.value = servers.length
+        onlineServers.value = servers.filter(s => s.status === 'online').length
         lastUpdateTime.value = new Date()
 
         // 显示成功通知
         showNotification('数据已刷新', 'success')
+        console.log('Data refreshed:', { total: totalServers.value, online: onlineServers.value })
       } catch (error) {
         console.error('Refresh failed:', error)
         showNotification('刷新失败', 'error')
@@ -198,11 +202,11 @@ export default {
       loadingText.value = '初始化应用...'
 
       try {
-        // 模拟加载服务器数据
+        // 加载服务器数据
         loadingText.value = '加载服务器数据...'
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        totalServers.value = 5
-        onlineServers.value = 4
+        const servers = await apiClient.getServers()
+        totalServers.value = servers.length
+        onlineServers.value = servers.filter(s => s.status === 'online').length
 
         // 模拟建立WebSocket连接
         loadingText.value = '建立实时连接...'
@@ -211,9 +215,13 @@ export default {
         connectionText.value = '已连接'
 
         lastUpdateTime.value = new Date()
+        console.log('App initialized with', totalServers.value, 'servers')
       } catch (error) {
         console.error('App initialization failed:', error)
         showNotification('应用初始化失败', 'error')
+        // 设置默认值
+        totalServers.value = 0
+        onlineServers.value = 0
       } finally {
         globalLoading.value = false
       }

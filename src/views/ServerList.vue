@@ -74,6 +74,7 @@
 <script>
 import { ref, onMounted } from 'vue'
 import { IconPlus, IconRefresh } from '@arco-design/web-vue/es/icon'
+import { apiClient } from '@/utils/api'
 
 export default {
   name: 'ServerList',
@@ -135,36 +136,23 @@ export default {
     const refreshList = async () => {
       loading.value = true
       try {
-        // 模拟数据加载
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        servers.value = [
-          {
-            name: 'web-server-01',
-            ip: '192.168.1.100',
-            location: '香港',
-            status: 'online',
-            lastUpdate: '2024-01-01 12:00:00'
-          },
-          {
-            name: 'db-server-01',
-            ip: '192.168.1.101',
-            location: '新加坡',
-            status: 'online',
-            lastUpdate: '2024-01-01 12:01:00'
-          },
-          {
-            name: 'cache-server-01',
-            ip: '192.168.1.102',
-            location: '东京',
-            status: 'offline',
-            lastUpdate: '2024-01-01 11:55:00'
-          }
-        ]
-        
+        // 从API获取真实数据
+        const serverData = await apiClient.getServers()
+
+        servers.value = serverData.map(server => ({
+          name: server.name,
+          ip: server.ip_address || '未知',
+          location: server.location || '未知',
+          status: server.status || 'unknown',
+          lastUpdate: server.last_update || server.created_at || '未知'
+        }))
+
         pagination.value.total = servers.value.length
+        console.log('Server list loaded:', servers.value.length, 'servers')
       } catch (error) {
         console.error('Failed to load servers:', error)
+        servers.value = []
+        pagination.value.total = 0
       } finally {
         loading.value = false
       }
