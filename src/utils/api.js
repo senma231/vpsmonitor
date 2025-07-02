@@ -28,12 +28,12 @@ function getApiBaseURL() {
     // 从Pages域名推导Workers域名
     const projectName = currentHost.split('.')[0];
     const workersDomain = `${projectName}-api.workers.dev`;
-    return `https://${workersDomain}`;
+    return `https://${workersDomain}/api`;
   }
 
   // 本地开发环境
   if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
-    return 'http://localhost:8787';
+    return 'http://localhost:8787/api';
   }
 
   // 默认使用已知的Workers API地址
