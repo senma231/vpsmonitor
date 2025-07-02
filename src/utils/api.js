@@ -19,6 +19,11 @@ function getApiBaseURL() {
   // 自动检测：假设Workers和Pages在同一个账户下
   const currentHost = window.location.hostname;
 
+  // 自定义域名映射
+  if (currentHost === 'vps.senmago.tech') {
+    return 'https://vps-monitor-api.gp96123.workers.dev/api';
+  }
+
   if (currentHost.includes('.pages.dev')) {
     // 从Pages域名推导Workers域名
     const projectName = currentHost.split('.')[0];
@@ -31,13 +36,17 @@ function getApiBaseURL() {
     return 'http://localhost:8787';
   }
 
-  // 默认使用相对路径
-  return '/api';
+  // 默认使用已知的Workers API地址
+  return 'https://vps-monitor-api.gp96123.workers.dev/api';
 }
+
+// 获取API基础URL
+const apiBaseURL = getApiBaseURL();
+console.log('🔗 API Base URL:', apiBaseURL);
 
 // 创建axios实例
 const api = axios.create({
-  baseURL: getApiBaseURL(),
+  baseURL: apiBaseURL,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
@@ -147,11 +156,34 @@ export const apiClient = {
    */
   async createServer(serverData) {
     try {
+      console.log('🚀 Creating server:', serverData);
+      console.log('📡 API URL:', `${apiBaseURL}/servers`);
+
       const response = await api.post('/servers', serverData)
+      console.log('✅ Server created successfully:', response);
       return response
     } catch (error) {
-      console.error('Failed to create server:', error)
-      throw new Error(error.response?.data?.message || '创建服务器失败')
+      console.error('❌ Failed to create server:', error);
+      console.error('📄 Error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+
+      // 提供更详细的错误信息
+      if (error.response?.status === 404) {
+        throw new Error('API端点未找到，请检查服务器配置');
+      } else if (error.response?.status === 401) {
+        throw new Error('认证失败，请检查API密钥');
+      } else if (error.response?.status >= 500) {
+        throw new Error('服务器内部错误，请稍后重试');
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        throw new Error('网络连接失败，请检查网络连接');
+      } else {
+        throw new Error(error.response?.data?.message || error.message || '创建服务器失败');
+      }
     }
   },
   
