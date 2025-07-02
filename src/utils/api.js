@@ -6,7 +6,7 @@
 import axios from 'axios'
 
 /**
- * 自动检测API地址
+ * 获取API地址 - 统一使用固定地址
  */
 function getApiBaseURL() {
   // 优先使用环境变量
@@ -16,27 +16,14 @@ function getApiBaseURL() {
     return envApiUrl;
   }
 
-  // 自动检测：假设Workers和Pages在同一个账户下
-  const currentHost = window.location.hostname;
-
-  // 自定义域名映射
-  if (currentHost === 'vps.senmago.tech') {
-    return 'https://vps-monitor-api.gp96123.workers.dev/api';
-  }
-
-  if (currentHost.includes('.pages.dev')) {
-    // 从Pages域名推导Workers域名
-    const projectName = currentHost.split('.')[0];
-    const workersDomain = `${projectName}-api.workers.dev`;
-    return `https://${workersDomain}/api`;
-  }
-
   // 本地开发环境
+  const currentHost = window.location.hostname;
   if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
     return 'http://localhost:8787/api';
   }
 
-  // 默认使用已知的Workers API地址
+  // 所有生产环境统一使用固定的Workers API地址
+  // 包括自定义域名和Pages域名
   return 'https://vps-monitor-api.gp96123.workers.dev/api';
 }
 
