@@ -136,7 +136,9 @@
   
   <!-- Service Worker Registration -->
   <script>
-    // 注册Service Worker
+    // 临时禁用Service Worker注册
+    // TODO: 创建sw.js文件后重新启用
+    /*
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
@@ -148,6 +150,7 @@
           });
       });
     }
+    */
     
     // 隐藏加载屏幕
     window.addEventListener('load', () => {
