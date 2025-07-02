@@ -4,168 +4,26 @@ main = "src/index.js"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Workers 设置
-[env.production]
-name = "vps-monitor-api"
-route = { pattern = "api.your-domain.com/*", zone_name = "your-domain.com" }
-
-[env.staging]
-name = "vps-monitor-api-staging"
-
 # 环境变量
 [vars]
 ENVIRONMENT = "production"
 API_VERSION = "v1"
 CORS_ORIGIN = "*"
 
-# 密钥配置 (通过 wrangler secret 命令设置)
-# wrangler secret put AUTH_SECRET
-# wrangler secret put ENCRYPTION_KEY
-# wrangler secret put ADMIN_PASSWORD
-
 # D1 数据库绑定
 [[d1_databases]]
 binding = "DB"
 database_name = "vps-monitor"
-database_id = "your-database-id"
+database_id = "6504b230-6a8f-4341-bbb6-599e915f48c1"
 
 # KV 存储绑定 (用于缓存)
 [[kv_namespaces]]
 binding = "CACHE"
-id = "your-kv-namespace-id"
-preview_id = "your-preview-kv-namespace-id"
+id = "f16627d17f134cddb15f46833d90d9a6"
 
-# Durable Objects 绑定 (WebSocket处理)
-[[durable_objects.bindings]]
-name = "WEBSOCKET_HANDLER"
-class_name = "WebSocketHandler"
+# 定时任务配置 (暂时禁用)
+# [[triggers.crons]]
+# cron = "*/5 * * * *"  # 每5分钟检查离线服务器
 
-# 定时任务配置
-[[triggers.crons]]
-cron = "*/5 * * * *"  # 每5分钟检查离线服务器
-
-[[triggers.crons]]
-cron = "*/10 * * * *"  # 每10分钟运行连通性测试
-
-[[triggers.crons]]
-cron = "0 */6 * * *"   # 每6小时清理过期数据
-
-# 资源限制
-[limits]
-cpu_ms = 50000  # 50秒CPU时间
-
-# 构建配置
-[build]
-command = "npm run build"
-cwd = "."
-
-# 开发配置
-[dev]
-ip = "127.0.0.1"
-port = 8787
-local_protocol = "http"
-
-# 部署配置
-[deploy]
-compatibility_date = "2024-01-01"
-compatibility_flags = ["nodejs_compat"]
-
-# 路由配置
-[[routes]]
-pattern = "api.your-domain.com/*"
-zone_name = "your-domain.com"
-
-# 自定义域名
-[custom_domains]
-api = "api.your-domain.com"
-
-# 日志配置
-[observability]
-enabled = true
-
-# 安全配置
-[security]
-# CSP 头部
-content_security_policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"
-
-# 速率限制
-[rate_limiting]
-enabled = true
-threshold = 1000  # 每分钟1000个请求
-
-# 缓存配置
-[cache]
-browser_ttl = 300     # 5分钟浏览器缓存
-edge_ttl = 600        # 10分钟边缘缓存
-
-# 压缩配置
-[compression]
-enabled = true
-algorithms = ["gzip", "brotli"]
-
-# 错误页面
-[error_pages]
-404 = "errors/404.html"
-500 = "errors/500.html"
-
-# 健康检查
-[health_checks]
-enabled = true
-path = "/health"
-interval = 60  # 60秒检查一次
-
-# 监控配置
-[analytics]
-enabled = true
-
-# 地理位置配置
-[geo]
-enabled = true
-
-# WebSocket 配置
-[websocket]
-enabled = true
-max_connections = 1000
-idle_timeout = 300  # 5分钟空闲超时
-
-# 数据库迁移
-[migrations]
-enabled = true
-directory = "../database/migrations"
-
-# 备份配置
-[backup]
-enabled = true
-schedule = "0 2 * * *"  # 每天凌晨2点备份
-retention_days = 30
-
-# 告警配置
-[alerts]
-enabled = true
-email = "admin@your-domain.com"
-webhook = "https://your-webhook-url.com"
-
-# 性能配置
-[performance]
-# 启用HTTP/2
-http2 = true
-# 启用HTTP/3
-http3 = true
-# 启用Early Hints
-early_hints = true
-
-# 开发者工具
-[dev_tools]
-# 启用热重载
-hot_reload = true
-# 启用源码映射
-source_maps = true
-# 启用调试模式
-debug = true
-
-# 实验性功能
-[experimental]
-# 启用新的运行时
-new_runtime = true
-# 启用WebAssembly
-wasm = true
+# [[triggers.crons]]
+# cron = "*/10 * * * *"  # 每10分钟运行连通性测试
