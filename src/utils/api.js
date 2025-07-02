@@ -5,9 +5,39 @@
 
 import axios from 'axios'
 
+/**
+ * 自动检测API地址
+ */
+function getApiBaseURL() {
+  // 优先使用环境变量
+  const envApiUrl = import.meta.env.VITE_API_URL;
+
+  if (envApiUrl && !envApiUrl.includes('placeholder')) {
+    return envApiUrl;
+  }
+
+  // 自动检测：假设Workers和Pages在同一个账户下
+  const currentHost = window.location.hostname;
+
+  if (currentHost.includes('.pages.dev')) {
+    // 从Pages域名推导Workers域名
+    const projectName = currentHost.split('.')[0];
+    const workersDomain = `${projectName}-api.workers.dev`;
+    return `https://${workersDomain}`;
+  }
+
+  // 本地开发环境
+  if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+    return 'http://localhost:8787';
+  }
+
+  // 默认使用相对路径
+  return '/api';
+}
+
 // 创建axios实例
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: getApiBaseURL(),
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json'
