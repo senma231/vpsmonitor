@@ -25,6 +25,9 @@ export async function handleAPI(request, env, services) {
 
       // Agent自动注册
       'POST /api/agent/register': () => registerAgent(request, services),
+
+      // 数据库管理
+      'POST /api/admin/clear-database': () => clearDatabase(request, services),
       
       // 监控数据
       'GET /api/servers/:name/data': () => getServerData(request, services),
@@ -253,8 +256,7 @@ async function updateServer(request, { db, crypto }) {
   }
 
   try {
-    updateData.name = serverName;
-    await db.upsertServer(updateData);
+    await db.updateServer(serverName, updateData);
     return createResponse({ message: 'Server updated successfully' });
   } catch (error) {
     return createErrorResponse(`Failed to update server: ${error.message}`, 500);
@@ -279,6 +281,34 @@ async function deleteServer(request, { db }) {
     return createResponse({ message: 'Server deleted successfully' });
   } catch (error) {
     return createErrorResponse(`Failed to delete server: ${error.message}`, 500);
+  }
+}
+
+/**
+ * 清空数据库
+ */
+async function clearDatabase(request, { db }) {
+  try {
+    // 清空主要表的数据（只清空存在的表）
+    const tables = ['monitor_data', 'servers'];
+
+    for (const table of tables) {
+      try {
+        await db.query(`DELETE FROM ${table}`);
+        console.log(`Cleared table: ${table}`);
+      } catch (error) {
+        console.log(`Table ${table} does not exist or failed to clear:`, error.message);
+      }
+    }
+
+    return createResponse({
+      message: 'Database cleared successfully',
+      cleared_tables: tables,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Failed to clear database:', error);
+    return createErrorResponse(`Failed to clear database: ${error.message}`, 500);
   }
 }
 
@@ -316,7 +346,13 @@ async function receiveServerData(request, { db }) {
   const serverName = extractParams(url.pathname, '/api/servers/:name/data').name;
 
   try {
-    const monitorData = await request.json();
+    let monitorData;
+    try {
+      monitorData = await request.json();
+    } catch (jsonError) {
+      console.error('JSON parsing error:', jsonError);
+      return createErrorResponse(`Invalid JSON format: ${jsonError.message}`, 400);
+    }
 
     // 验证数据格式
     if (!monitorData.timestamp || !monitorData.server_name) {
@@ -328,40 +364,19 @@ async function receiveServerData(request, { db }) {
       return createErrorResponse('Server name mismatch', 400);
     }
 
-    // 转换Agent数据格式为数据库格式
-    const dbData = {
-      server_name: serverName,
-      platform: 'Linux',
-      platform_version: 'Unknown',
-      arch: 'x64',
-      virtualization: 'Unknown',
-      cpu_info: 'Unknown',
-      cpu_usage: monitorData.cpu_percent || 0,
-      cpu_cores: 1,
-      memory_total: monitorData.memory?.total || 0,
-      memory_used: monitorData.memory?.used || 0,
-      memory_usage: monitorData.memory_percent || 0,
-      swap_total: 0,
-      swap_used: 0,
-      swap_usage: 0,
-      disk_total: monitorData.disk?.total || 0,
-      disk_used: monitorData.disk?.used || 0,
-      disk_usage: monitorData.disk_percent || 0,
-      network_in_transfer: monitorData.network?.bytes_recv || 0,
-      network_out_transfer: monitorData.network?.bytes_sent || 0,
-      network_in_speed: 0,
-      network_out_speed: 0,
-      load_1: monitorData.cpu?.load_avg?.[0] || 0,
-      load_5: monitorData.cpu?.load_avg?.[1] || 0,
-      load_15: monitorData.cpu?.load_avg?.[2] || 0,
-      uptime: monitorData.uptime || 0,
-      boot_time: Date.now() - (monitorData.uptime || 0) * 1000,
-      process_count: 0,
-      data_source: 'agent'
-    };
-
-    // 保存监控数据
-    await db.saveMonitorData(dbData);
+    // 直接插入简化的监控数据
+    await db.execute(`
+      INSERT INTO monitor_data (
+        server_name, cpu_usage, memory_usage, disk_usage,
+        data_source, timestamp
+      ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `, [
+      serverName,
+      monitorData.cpu_percent || 0,
+      monitorData.memory_percent || 0,
+      monitorData.disk_percent || 0,
+      'agent'
+    ]);
 
     // 更新服务器状态为在线
     await db.updateServerStatus(serverName, 'online');

@@ -96,8 +96,22 @@ export class Database {
     const {
       name, due_time, buy_url, seller, price,
       ip_address, port, encrypted_credentials,
-      monitor_method, monitor_interval, location, region
+      monitor_method, monitor_interval, location, region,
+      description, expiry_date, purchase_url
     } = serverData;
+
+    // 处理字段映射，确保没有undefined值
+    const finalRegion = description || region || '';
+    const finalDueTime = expiry_date || due_time || null;
+    const finalBuyUrl = purchase_url || buy_url || null;
+    const finalSeller = seller || null;
+    const finalPrice = price || null;
+    const finalIpAddress = ip_address || null;
+    const finalPort = port || 22;
+    const finalEncryptedCredentials = encrypted_credentials || null;
+    const finalMonitorMethod = monitor_method || 'both';
+    const finalMonitorInterval = monitor_interval || 300;
+    const finalLocation = location || null;
 
     return await this.execute(`
       INSERT INTO servers (
@@ -120,10 +134,52 @@ export class Database {
         region = excluded.region,
         updated_at = CURRENT_TIMESTAMP
     `, [
-      name, due_time, buy_url, seller, price,
-      ip_address, port, encrypted_credentials,
-      monitor_method, monitor_interval, location, region
+      name, finalDueTime, finalBuyUrl, finalSeller, finalPrice,
+      finalIpAddress, finalPort, finalEncryptedCredentials,
+      finalMonitorMethod, finalMonitorInterval, finalLocation, finalRegion
     ]);
+  }
+
+  /**
+   * 更新服务器（只更新提供的字段）
+   */
+  async updateServer(serverName, updateData) {
+    // 构建动态更新SQL
+    const updateFields = [];
+    const updateValues = [];
+
+    // 字段映射
+    const fieldMapping = {
+      location: 'location',
+      description: 'region',
+      expiry_date: 'due_time',
+      purchase_url: 'buy_url',
+      seller: 'seller',
+      price: 'price',
+      monitor_method: 'monitor_method',
+      monitor_interval: 'monitor_interval'
+    };
+
+    // 处理每个提供的字段
+    for (const [key, value] of Object.entries(updateData)) {
+      if (key === 'name') continue; // 跳过name字段
+
+      const dbField = fieldMapping[key] || key;
+      updateFields.push(`${dbField} = ?`);
+      updateValues.push(value);
+    }
+
+    if (updateFields.length === 0) {
+      return; // 没有字段需要更新
+    }
+
+    // 添加updated_at字段
+    updateFields.push('updated_at = CURRENT_TIMESTAMP');
+    updateValues.push(serverName);
+
+    const sql = `UPDATE servers SET ${updateFields.join(', ')} WHERE name = ?`;
+
+    return await this.execute(sql, updateValues);
   }
 
   /**
