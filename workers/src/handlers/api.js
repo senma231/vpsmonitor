@@ -22,6 +22,9 @@ export async function handleAPI(request, env, services) {
       'PUT /api/servers/:name': () => updateServer(request, services),
       'DELETE /api/servers/:name': () => deleteServer(request, services),
       'GET /api/servers/:name': () => getServer(request, services),
+
+      // Agent自动注册
+      'POST /api/agent/register': () => registerAgent(request, services),
       
       // 监控数据
       'GET /api/servers/:name/data': () => getServerData(request, services),
@@ -113,6 +116,67 @@ async function getServers(request, { db }) {
 }
 
 /**
+ * Agent自动注册
+ */
+async function registerAgent(request, { db, crypto }) {
+  try {
+    const agentData = await request.json();
+
+    // 验证必需字段
+    if (!agentData.name || !agentData.ip_address) {
+      return createErrorResponse('Agent name and IP address are required', 400);
+    }
+
+    // 获取客户端IP作为备用
+    const clientIP = request.headers.get('CF-Connecting-IP') ||
+                     request.headers.get('X-Forwarded-For') ||
+                     agentData.ip_address;
+
+    // 标准化agent数据
+    const serverData = {
+      name: agentData.name,
+      ip_address: clientIP,
+      location: agentData.location || 'Auto-detected',
+      region: agentData.description || 'Agent auto-registered',
+      port: agentData.port || 22,
+      monitor_method: 'both',
+      monitor_interval: 300,
+      due_time: null,
+      buy_url: null,
+      seller: 'Agent',
+      price: null,
+      encrypted_credentials: null
+    };
+
+    // 检查是否已存在同名服务器
+    const existingServers = await db.getServers();
+    const existingServer = existingServers.find(s => s.name === serverData.name);
+
+    if (existingServer) {
+      // 更新现有服务器的IP地址
+      await db.upsertServer({ ...serverData, id: existingServer.id });
+      return createResponse({
+        message: 'Agent registered successfully (updated existing server)',
+        server: { name: serverData.name, ip_address: serverData.ip_address },
+        action: 'updated'
+      });
+    } else {
+      // 创建新服务器
+      await db.upsertServer(serverData);
+      return createResponse({
+        message: 'Agent registered successfully (new server created)',
+        server: { name: serverData.name, ip_address: serverData.ip_address },
+        action: 'created'
+      });
+    }
+
+  } catch (error) {
+    console.error('Agent registration error:', error);
+    return createErrorResponse(`Failed to register agent: ${error.message}`, 500);
+  }
+}
+
+/**
  * 创建服务器
  */
 async function createServer(request, { db, crypto }) {
@@ -123,25 +187,44 @@ async function createServer(request, { db, crypto }) {
   //   return createErrorResponse('Unauthorized', 401);
   // }
 
-  const serverData = await request.json();
-  
+  const rawData = await request.json();
+
   // 验证必需字段
-  if (!serverData.name) {
-    return createErrorResponse('Server name is required', 400);
+  if (!rawData.name || !rawData.ip_address) {
+    return createErrorResponse('Server name and IP address are required', 400);
   }
 
+  // 标准化服务器数据，添加默认值
+  const serverData = {
+    name: rawData.name,
+    ip_address: rawData.ip_address,
+    location: rawData.location || 'Unknown',
+    region: rawData.description || rawData.region || 'Default',
+    port: rawData.port || 22,
+    monitor_method: rawData.monitor_method || 'both',
+    monitor_interval: rawData.monitor_interval || 300,
+    due_time: rawData.due_time || null,
+    buy_url: rawData.buy_url || null,
+    seller: rawData.seller || null,
+    price: rawData.price || null,
+    encrypted_credentials: null
+  };
+
   // 加密SSH凭据
-  if (serverData.ssh_credentials) {
+  if (rawData.ssh_credentials) {
     serverData.encrypted_credentials = await crypto.encrypt(
-      JSON.stringify(serverData.ssh_credentials)
+      JSON.stringify(rawData.ssh_credentials)
     );
-    delete serverData.ssh_credentials;
   }
 
   try {
     await db.upsertServer(serverData);
-    return createResponse({ message: 'Server created successfully' });
+    return createResponse({
+      message: 'Server created successfully',
+      server: { name: serverData.name, ip_address: serverData.ip_address }
+    });
   } catch (error) {
+    console.error('Database error:', error);
     return createErrorResponse(`Failed to create server: ${error.message}`, 500);
   }
 }
