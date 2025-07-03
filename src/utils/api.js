@@ -123,7 +123,7 @@ export const apiClient = {
    */
   async getServers() {
     try {
-      const response = await api.get('/servers')
+      const response = await api.get('/api/servers')
       return response || []
     } catch (error) {
       console.error('Failed to get servers:', error)
@@ -135,7 +135,7 @@ export const apiClient = {
    * 获取单个服务器信息
    */
   async getServer(name) {
-    return await api.get(`/servers/${encodeURIComponent(name)}`)
+    return await api.get(`/api/servers/${encodeURIComponent(name)}`)
   },
   
   /**
@@ -144,9 +144,9 @@ export const apiClient = {
   async createServer(serverData) {
     try {
       console.log('🚀 Creating server:', serverData);
-      console.log('📡 API URL:', `${apiBaseURL}/servers`);
+      console.log('📡 API URL:', `${apiBaseURL}/api/servers`);
 
-      const response = await api.post('/servers', serverData)
+      const response = await api.post('/api/servers', serverData)
       console.log('✅ Server created successfully:', response);
       return response
     } catch (error) {
@@ -178,14 +178,14 @@ export const apiClient = {
    * 更新服务器
    */
   async updateServer(name, serverData) {
-    return await api.put(`/servers/${encodeURIComponent(name)}`, serverData)
+    return await api.put(`/api/servers/${encodeURIComponent(name)}`, serverData)
   },
-  
+
   /**
    * 删除服务器
    */
   async deleteServer(name) {
-    return await api.delete(`/servers/${encodeURIComponent(name)}`)
+    return await api.delete(`/api/servers/${encodeURIComponent(name)}`)
   },
   
   // ==================== 监控数据 ====================
@@ -194,25 +194,25 @@ export const apiClient = {
    * 获取服务器监控数据
    */
   async getServerData(name, limit = 100) {
-    return await api.get(`/servers/${encodeURIComponent(name)}/data`, {
+    return await api.get(`/api/servers/${encodeURIComponent(name)}/data`, {
       params: { limit }
     })
   },
-  
+
   /**
    * 获取服务器历史数据
    */
   async getServerHistory(name, hours = 24) {
-    return await api.get(`/servers/${encodeURIComponent(name)}/history`, {
+    return await api.get(`/api/servers/${encodeURIComponent(name)}/history`, {
       params: { hours }
     })
   },
-  
+
   /**
    * 触发服务器监控
    */
   async triggerMonitor(name) {
-    return await api.post(`/servers/${encodeURIComponent(name)}/monitor`)
+    return await api.post(`/api/servers/${encodeURIComponent(name)}/monitor`)
   },
   
   // ==================== 连通性测试 ====================
@@ -221,14 +221,14 @@ export const apiClient = {
    * 运行速度测试
    */
   async runSpeedTest(name) {
-    return await api.post(`/servers/${encodeURIComponent(name)}/speedtest`)
+    return await api.post(`/api/servers/${encodeURIComponent(name)}/speedtest`)
   },
-  
+
   /**
    * 获取连通性测试结果
    */
   async getConnectivityTests(name, hours = 24) {
-    return await api.get(`/servers/${encodeURIComponent(name)}/connectivity`, {
+    return await api.get(`/api/servers/${encodeURIComponent(name)}/connectivity`, {
       params: { hours }
     })
   },
@@ -239,16 +239,16 @@ export const apiClient = {
    * 获取系统配置
    */
   async getConfig(key = null) {
-    return await api.get('/config', {
+    return await api.get('/api/config', {
       params: key ? { key } : {}
     })
   },
-  
+
   /**
    * 设置系统配置
    */
   async setConfig(configData) {
-    return await api.post('/config', configData)
+    return await api.post('/api/config', configData)
   },
   
   // ==================== 统计信息 ====================
@@ -257,14 +257,14 @@ export const apiClient = {
    * 获取系统统计信息
    */
   async getStats() {
-    return await api.get('/stats')
+    return await api.get('/api/stats')
   },
-  
+
   /**
    * 获取仪表板数据
    */
   async getDashboard() {
-    return await api.get('/dashboard')
+    return await api.get('/api/dashboard')
   }
 }
 

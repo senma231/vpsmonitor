@@ -47,9 +47,22 @@ show_install_info() {
     echo "  ✅ 无需手动配置"
     echo ""
     
-    read -p "是否继续安装? [Y/n]: " confirm
-    confirm=${confirm:-Y}
-    
+    # 检查是否为非交互模式
+    if [[ "$VPS_MONITOR_AUTO_INSTALL" == "true" ]] || [[ ! -t 0 ]]; then
+        log_info "自动安装模式，跳过确认"
+        confirm="Y"
+    else
+        # 交互模式，带超时的确认
+        echo -n "是否继续安装? [Y/n] (10秒后自动继续): "
+        if read -t 10 confirm; then
+            confirm=${confirm:-Y}
+        else
+            echo ""
+            log_info "超时，自动继续安装"
+            confirm="Y"
+        fi
+    fi
+
     if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
         log_info "安装已取消"
         exit 0
