@@ -19,12 +19,12 @@ function getApiBaseURL() {
   // 本地开发环境
   const currentHost = window.location.hostname;
   if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
-    return 'http://localhost:8787/api';
+    return 'http://localhost:8787';
   }
 
   // 所有生产环境统一使用固定的Workers API地址
   // 包括自定义域名和Pages域名
-  return 'https://vps-monitor-api.gp96123.workers.dev/api';
+  return 'https://vps-monitor-api.gp96123.workers.dev';
 }
 
 // 获取API基础URL
