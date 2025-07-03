@@ -214,11 +214,45 @@ export default {
     }
     
     const editServer = (server) => {
-      console.log('Editing server:', server)
+      // 填充编辑表单
+      newServer.value = {
+        name: server.name,
+        ip: server.ip_address,
+        location: server.location,
+        description: server.region || ''
+      }
+
+      // 显示模态框
+      showAddModal.value = true
     }
-    
-    const deleteServer = (server) => {
-      console.log('Deleting server:', server)
+
+    const deleteServer = async (server) => {
+      Modal.confirm({
+        title: '确认删除',
+        content: `确定要删除服务器 "${server.name}" 吗？此操作不可恢复。`,
+        okText: '删除',
+        cancelText: '取消',
+        okButtonProps: { status: 'danger' },
+        onOk: async () => {
+          try {
+            await vpsAPI.deleteServer(server.name)
+
+            Notification.success({
+              title: '删除成功',
+              content: `服务器 "${server.name}" 已删除`
+            })
+
+            // 刷新列表
+            await refreshList()
+          } catch (error) {
+            console.error('Delete server error:', error)
+            Notification.error({
+              title: '删除失败',
+              content: error.message || '服务器删除失败，请重试'
+            })
+          }
+        }
+      })
     }
     
     onMounted(() => {

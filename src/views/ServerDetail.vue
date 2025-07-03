@@ -138,14 +138,14 @@ export default {
     
     const refreshData = async () => {
       try {
-        // 模拟数据加载
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
+        // 获取服务器信息
+        const server = await vpsAPI.getServer(serverName.value)
+
         serverInfo.value = {
-          name: serverName.value,
-          ip: '192.168.1.100',
-          location: '香港',
-          status: 'online'
+          name: server.name,
+          ip: server.ip_address,
+          location: server.location,
+          status: server.status
         }
         
         monitorData.value = {

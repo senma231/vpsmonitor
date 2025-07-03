@@ -28,6 +28,7 @@ export async function handleAPI(request, env, services) {
       
       // 监控数据
       'GET /api/servers/:name/data': () => getServerData(request, services),
+      'POST /api/servers/:name/data': () => receiveServerData(request, services),
       'GET /api/servers/:name/history': () => getServerHistory(request, services),
       'POST /api/servers/:name/monitor': () => triggerMonitor(request, services),
       
@@ -306,6 +307,75 @@ async function getServer(request, { db }) {
 }
 
 // ==================== 监控数据API ====================
+
+/**
+ * 接收Agent发送的监控数据
+ */
+async function receiveServerData(request, { db }) {
+  const url = new URL(request.url);
+  const serverName = extractParams(url.pathname, '/api/servers/:name/data').name;
+
+  try {
+    const monitorData = await request.json();
+
+    // 验证数据格式
+    if (!monitorData.timestamp || !monitorData.server_name) {
+      return createErrorResponse('Invalid monitor data format', 400);
+    }
+
+    // 确保服务器名称匹配
+    if (monitorData.server_name !== serverName) {
+      return createErrorResponse('Server name mismatch', 400);
+    }
+
+    // 转换Agent数据格式为数据库格式
+    const dbData = {
+      server_name: serverName,
+      platform: 'Linux',
+      platform_version: 'Unknown',
+      arch: 'x64',
+      virtualization: 'Unknown',
+      cpu_info: 'Unknown',
+      cpu_usage: monitorData.cpu_percent || 0,
+      cpu_cores: 1,
+      memory_total: monitorData.memory?.total || 0,
+      memory_used: monitorData.memory?.used || 0,
+      memory_usage: monitorData.memory_percent || 0,
+      swap_total: 0,
+      swap_used: 0,
+      swap_usage: 0,
+      disk_total: monitorData.disk?.total || 0,
+      disk_used: monitorData.disk?.used || 0,
+      disk_usage: monitorData.disk_percent || 0,
+      network_in_transfer: monitorData.network?.bytes_recv || 0,
+      network_out_transfer: monitorData.network?.bytes_sent || 0,
+      network_in_speed: 0,
+      network_out_speed: 0,
+      load_1: monitorData.cpu?.load_avg?.[0] || 0,
+      load_5: monitorData.cpu?.load_avg?.[1] || 0,
+      load_15: monitorData.cpu?.load_avg?.[2] || 0,
+      uptime: monitorData.uptime || 0,
+      boot_time: Date.now() - (monitorData.uptime || 0) * 1000,
+      process_count: 0,
+      data_source: 'agent'
+    };
+
+    // 保存监控数据
+    await db.saveMonitorData(dbData);
+
+    // 更新服务器状态为在线
+    await db.updateServerStatus(serverName, 'online');
+
+    return createResponse({
+      message: 'Monitor data received successfully',
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Error receiving monitor data:', error);
+    return createErrorResponse(`Failed to receive monitor data: ${error.message}`, 500);
+  }
+}
 
 /**
  * 获取服务器监控数据
