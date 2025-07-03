@@ -83,7 +83,8 @@ check_permissions() {
 # 获取最新版本
 get_latest_version() {
     log_info "获取最新版本信息..."
-    LATEST_VERSION=$(curl -s "https://api.github.com/repos/senma231/vpsmonitor/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+    # 强制使用IPv4，避免IPv6连接问题
+    LATEST_VERSION=$(curl -4 -s --connect-timeout 10 "https://api.github.com/repos/senma231/vpsmonitor/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
     if [[ -z "$LATEST_VERSION" ]]; then
         log_warning "无法获取最新版本，使用默认版本 v1.0.0"
         LATEST_VERSION="v1.0.0"
@@ -99,9 +100,9 @@ download_agent() {
     TEMP_FILE="/tmp/vps-agent"
     
     if command -v curl &> /dev/null; then
-        curl -L -o "$TEMP_FILE" "$DOWNLOAD_URL"
+        curl -4 -L --connect-timeout 30 -o "$TEMP_FILE" "$DOWNLOAD_URL"
     elif command -v wget &> /dev/null; then
-        wget -O "$TEMP_FILE" "$DOWNLOAD_URL"
+        wget -4 --timeout=30 -O "$TEMP_FILE" "$DOWNLOAD_URL"
     else
         log_error "需要 curl 或 wget 来下载文件"
         exit 1
@@ -137,12 +138,12 @@ install_agent() {
 get_public_ip() {
     local ip=""
 
-    # 尝试多个IP检测服务
+    # 尝试多个IP检测服务，强制使用IPv4
     for service in "ifconfig.me" "ipinfo.io/ip" "icanhazip.com" "ident.me"; do
         if command -v curl &> /dev/null; then
-            ip=$(curl -s --connect-timeout 5 "http://$service" 2>/dev/null | tr -d '\n\r')
+            ip=$(curl -4 -s --connect-timeout 5 "http://$service" 2>/dev/null | tr -d '\n\r')
         elif command -v wget &> /dev/null; then
-            ip=$(wget -qO- --timeout=5 "http://$service" 2>/dev/null | tr -d '\n\r')
+            ip=$(wget -4 -qO- --timeout=5 "http://$service" 2>/dev/null | tr -d '\n\r')
         fi
 
         # 验证IP格式
@@ -181,15 +182,15 @@ auto_register_server() {
 EOF
 )
 
-    # 发送注册请求到专用的agent注册端点
+    # 发送注册请求到专用的agent注册端点，强制使用IPv4
     local response=""
     if command -v curl &> /dev/null; then
-        response=$(curl -s -X POST \
+        response=$(curl -4 -s --connect-timeout 10 -X POST \
             -H "Content-Type: application/json" \
             -d "$register_data" \
             "$DEFAULT_API_URL/api/agent/register" 2>/dev/null)
     elif command -v wget &> /dev/null; then
-        response=$(wget -qO- \
+        response=$(wget -4 -qO- --timeout=10 \
             --header="Content-Type: application/json" \
             --post-data="$register_data" \
             "$DEFAULT_API_URL/api/agent/register" 2>/dev/null)

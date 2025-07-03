@@ -107,11 +107,11 @@ run_installer() {
     local install_script_url="https://raw.githubusercontent.com/senma231/vpsmonitor/main/scripts/install-agent.sh"
     local temp_script="/tmp/vps-monitor-install.sh"
     
-    # 下载安装脚本
+    # 下载安装脚本，强制使用IPv4
     if command -v curl &> /dev/null; then
-        curl -fsSL "$install_script_url" -o "$temp_script"
+        curl -4 -fsSL --connect-timeout 30 "$install_script_url" -o "$temp_script"
     elif command -v wget &> /dev/null; then
-        wget -qO "$temp_script" "$install_script_url"
+        wget -4 --timeout=30 -qO "$temp_script" "$install_script_url"
     else
         log_error "需要 curl 或 wget 来下载安装脚本"
         exit 1
