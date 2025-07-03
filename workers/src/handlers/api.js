@@ -367,17 +367,35 @@ async function receiveServerData(request, { db }) {
     // 调试：打印接收到的数据
     console.log('Received monitor data:', JSON.stringify(monitorData));
 
+    // 处理Agent发送的嵌套数据结构
+    let cpu_percent = 0;
+    let memory_percent = 0;
+    let disk_percent = 0;
+
+    // 支持两种数据格式：扁平结构和嵌套结构
+    if (monitorData.cpu_percent !== undefined) {
+      // 扁平结构（手动测试数据）
+      cpu_percent = monitorData.cpu_percent;
+      memory_percent = monitorData.memory_percent;
+      disk_percent = monitorData.disk_percent;
+    } else if (monitorData.cpu && monitorData.cpu.percent !== undefined) {
+      // 嵌套结构（Agent发送的数据）
+      cpu_percent = monitorData.cpu.percent;
+      memory_percent = monitorData.memory.percent;
+      disk_percent = monitorData.disk.percent;
+    }
+
     // 准备插入数据
     const insertData = [
       serverName,
-      monitorData.cpu_percent || 0,
-      monitorData.memory_percent || 0,
-      monitorData.disk_percent || 0,
+      cpu_percent || 0,
+      memory_percent || 0,
+      disk_percent || 0,
       monitorData.uptime || null,
       monitorData.boot_time || null,
-      monitorData.load_1 || null,
-      monitorData.load_5 || null,
-      monitorData.load_15 || null,
+      monitorData.load_1 || (monitorData.cpu && monitorData.cpu.load_avg ? monitorData.cpu.load_avg[0] : null),
+      monitorData.load_5 || (monitorData.cpu && monitorData.cpu.load_avg ? monitorData.cpu.load_avg[1] : null),
+      monitorData.load_15 || (monitorData.cpu && monitorData.cpu.load_avg ? monitorData.cpu.load_avg[2] : null),
       monitorData.process_count || null,
       'agent'
     ];
@@ -491,9 +509,12 @@ async function getConnectivityTests(request, { db }) {
   const hours = parseInt(url.searchParams.get('hours') || '24');
 
   try {
+    console.log(`Getting connectivity tests for ${serverName}, hours: ${hours}`);
     const tests = await db.getConnectivityTests(serverName, hours);
+    console.log(`Found ${tests.length} connectivity tests`);
     return createResponse(tests);
   } catch (error) {
+    console.error('Connectivity tests error:', error);
     return createErrorResponse(`Failed to get connectivity tests: ${error.message}`, 500);
   }
 }

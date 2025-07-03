@@ -34,14 +34,14 @@
           <a-col :span="6">
             <a-statistic
               title="总体状态"
-              :value="lastTestResult.summary?.overall_status || 'unknown'"
+              :value="getDisplayStatus(lastTestResult.summary?.overall_status)"
               :value-style="getStatusStyle(lastTestResult.summary?.overall_status)"
             />
           </a-col>
           <a-col :span="6">
             <a-statistic
               title="成功率"
-              :value="lastTestResult.summary?.success_rate || 0"
+              :value="getDisplayNumber(lastTestResult.summary?.success_rate, 0)"
               suffix="%"
               :precision="1"
             />
@@ -49,7 +49,7 @@
           <a-col :span="6">
             <a-statistic
               title="平均延迟"
-              :value="lastTestResult.summary?.avg_latency || 0"
+              :value="getDisplayNumber(lastTestResult.summary?.avg_latency, 0)"
               suffix="ms"
               :precision="0"
             />
@@ -57,7 +57,7 @@
           <a-col :span="6">
             <a-statistic
               title="最佳节点"
-              :value="lastTestResult.summary?.best_node || '-'"
+              :value="getDisplayText(lastTestResult.summary?.best_node)"
             />
           </a-col>
         </a-row>
@@ -195,7 +195,7 @@ export default {
         title: '测试时间',
         dataIndex: 'timestamp',
         key: 'timestamp',
-        render: ({ record }) => formatTime(record.timestamp)
+        render: ({ record }) => formatTimestamp(record.timestamp)
       }
     ]
 
@@ -209,8 +209,23 @@ export default {
         if (!nodeData[item.test_region]) {
           nodeData[item.test_region] = []
         }
+        // 安全地解析时间戳
+        let parsedTime
+        try {
+          let dateStr = item.timestamp
+          if (typeof item.timestamp === 'string' && !item.timestamp.includes('T') && !item.timestamp.includes('Z')) {
+            dateStr = item.timestamp.replace(' ', 'T') + 'Z'
+          }
+          parsedTime = new Date(dateStr)
+          if (isNaN(parsedTime.getTime())) {
+            parsedTime = new Date()
+          }
+        } catch (error) {
+          parsedTime = new Date()
+        }
+
         nodeData[item.test_region].push({
-          time: new Date(item.timestamp),
+          time: parsedTime,
           latency: item.latency || null
         })
       })
@@ -351,6 +366,48 @@ export default {
       }
     }
 
+    // 辅助函数：处理显示状态
+    const getDisplayStatus = (status) => {
+      if (!status || status === '' || status === 'null') return '未知'
+      switch (status) {
+        case 'good': return '良好'
+        case 'poor': return '较差'
+        case 'failed': return '失败'
+        default: return status
+      }
+    }
+
+    // 辅助函数：处理显示数字
+    const getDisplayNumber = (value, defaultValue = 0) => {
+      if (value === null || value === undefined || value === '' || isNaN(value)) {
+        return defaultValue
+      }
+      return Number(value)
+    }
+
+    // 辅助函数：处理显示文本
+    const getDisplayText = (value) => {
+      if (!value || value === '' || value === 'null') return '-'
+      return value
+    }
+
+    // 辅助函数：格式化时间戳
+    const formatTimestamp = (timestamp) => {
+      if (!timestamp) return '-'
+      try {
+        // 处理数据库返回的时间格式 "2025-07-03 06:15:48"
+        // 如果没有时区信息，添加UTC标识以避免本地时区问题
+        let dateStr = timestamp
+        if (typeof timestamp === 'string' && !timestamp.includes('T') && !timestamp.includes('Z')) {
+          dateStr = timestamp.replace(' ', 'T') + 'Z'
+        }
+        return formatTime(dateStr, 'MM-DD HH:mm')
+      } catch (error) {
+        console.warn('Failed to format timestamp:', timestamp, error)
+        return '-'
+      }
+    }
+
     // 监听服务器名称变化
     watch(() => props.serverName, (newName) => {
       if (newName) {
@@ -380,7 +437,11 @@ export default {
       getStatusColor,
       getStatusText,
       getStatusStyle,
-      formatTime
+      getDisplayStatus,
+      getDisplayNumber,
+      getDisplayText,
+      formatTime,
+      formatTimestamp
     }
   }
 }
