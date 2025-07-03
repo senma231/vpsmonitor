@@ -179,15 +179,34 @@ export default {
               const monitorData = await apiClient.getServerData(server.name, 1)
               const latestData = monitorData && monitorData.length > 0 ? monitorData[0] : null
 
+              // 获取最新连通性测试数据（用于延迟）
+              let latestPing = 0
+              try {
+                const connectivityData = await apiClient.getConnectivityTests(server.name, 1)
+                if (connectivityData && connectivityData.length > 0) {
+                  // 找到最近的有延迟数据的测试（不管成功失败）
+                  const testsWithLatency = connectivityData.filter(test =>
+                    test.latency && test.latency > 0
+                  )
+                  if (testsWithLatency.length > 0) {
+                    // 使用最低延迟
+                    const minLatency = Math.min(...testsWithLatency.map(test => test.latency))
+                    latestPing = Math.round(minLatency)
+                  }
+                }
+              } catch (pingError) {
+                console.warn(`Failed to get ping data for ${server.name}:`, pingError)
+              }
+
               return {
                 name: server.name,
                 location: server.location || '未知',
                 status: server.status || 'unknown',
-                uptime: server.uptime || '未知',
+                uptime: latestData && latestData.uptime ? formatUptime(latestData.uptime) : '未知',
                 cpu: latestData ? Math.round(latestData.cpu_usage || 0) : 0,
                 memory: latestData ? Math.round(latestData.memory_usage || 0) : 0,
                 disk: latestData ? Math.round(latestData.disk_usage || 0) : 0,
-                ping: latestData ? Math.round(latestData.network_latency || 0) : 0
+                ping: latestPing
               }
             } catch (error) {
               console.error(`Failed to get monitor data for ${server.name}:`, error)
@@ -195,7 +214,7 @@ export default {
                 name: server.name,
                 location: server.location || '未知',
                 status: server.status || 'unknown',
-                uptime: server.uptime || '未知',
+                uptime: '未知',
                 cpu: 0,
                 memory: 0,
                 disk: 0,
@@ -225,10 +244,27 @@ export default {
       }
     }
     
+    // 格式化运行时间
+    const formatUptime = (seconds) => {
+      if (!seconds || seconds <= 0) return '未知'
+
+      const days = Math.floor(seconds / 86400)
+      const hours = Math.floor((seconds % 86400) / 3600)
+      const minutes = Math.floor((seconds % 3600) / 60)
+
+      if (days > 0) {
+        return `${days}天${hours}小时`
+      } else if (hours > 0) {
+        return `${hours}小时${minutes}分钟`
+      } else {
+        return `${minutes}分钟`
+      }
+    }
+
     onMounted(() => {
       refreshData()
     })
-    
+
     return {
       loading,
       stats,

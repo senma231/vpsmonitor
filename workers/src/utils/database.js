@@ -286,17 +286,29 @@ export class Database {
       packet_loss, response_code, error_message, test_duration
     } = testData;
 
+    // 处理undefined值
+    const safeValues = [
+      server_name || null,
+      test_type || null,
+      test_target || null,
+      test_port || null,
+      test_node || null,
+      test_region || null,
+      status || null,
+      latency || null,
+      packet_loss || null,
+      response_code || null,
+      error_message || null,
+      test_duration || null
+    ];
+
     return await this.execute(`
       INSERT INTO connectivity_tests (
         server_name, test_type, test_target, test_port,
         test_node, test_region, status, latency,
         packet_loss, response_code, error_message, test_duration
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      server_name, test_type, test_target, test_port,
-      test_node, test_region, status, latency,
-      packet_loss, response_code, error_message, test_duration
-    ]);
+    `, safeValues);
   }
 
   /**
