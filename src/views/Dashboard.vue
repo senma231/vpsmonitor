@@ -170,17 +170,42 @@ export default {
           alerts: 0 // 暂时设为0，后续可以从API获取
         }
 
-        // 设置服务器列表（最多显示5个）
-        recentServers.value = servers.slice(0, 5).map(server => ({
-          name: server.name,
-          location: server.location || '未知',
-          status: server.status || 'unknown',
-          uptime: server.uptime || '未知',
-          cpu: server.cpu_usage || 0,
-          memory: server.memory_usage || 0,
-          disk: server.disk_usage || 0,
-          ping: server.ping || 0
-        }))
+        // 设置服务器列表（最多显示5个）并获取监控数据
+        const serverList = servers.slice(0, 5)
+        const serversWithData = await Promise.all(
+          serverList.map(async (server) => {
+            try {
+              // 获取最新监控数据
+              const monitorData = await apiClient.getServerData(server.name, 1)
+              const latestData = monitorData && monitorData.length > 0 ? monitorData[0] : null
+
+              return {
+                name: server.name,
+                location: server.location || '未知',
+                status: server.status || 'unknown',
+                uptime: server.uptime || '未知',
+                cpu: latestData ? Math.round(latestData.cpu_usage || 0) : 0,
+                memory: latestData ? Math.round(latestData.memory_usage || 0) : 0,
+                disk: latestData ? Math.round(latestData.disk_usage || 0) : 0,
+                ping: latestData ? Math.round(latestData.network_latency || 0) : 0
+              }
+            } catch (error) {
+              console.error(`Failed to get monitor data for ${server.name}:`, error)
+              return {
+                name: server.name,
+                location: server.location || '未知',
+                status: server.status || 'unknown',
+                uptime: server.uptime || '未知',
+                cpu: 0,
+                memory: 0,
+                disk: 0,
+                ping: 0
+              }
+            }
+          })
+        )
+
+        recentServers.value = serversWithData
 
         console.log('Dashboard data loaded:', { stats: stats.value, servers: recentServers.value })
 

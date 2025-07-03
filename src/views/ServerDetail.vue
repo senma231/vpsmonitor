@@ -92,6 +92,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { IconRefresh, IconLeft } from '@arco-design/web-vue/es/icon'
 import SpeedTest from '@/components/SpeedTest.vue'
+import { apiClient } from '@/utils/api'
 
 export default {
   name: 'ServerDetail',
@@ -139,7 +140,7 @@ export default {
     const refreshData = async () => {
       try {
         // 获取服务器信息
-        const server = await vpsAPI.getServer(serverName.value)
+        const server = await apiClient.getServer(serverName.value)
 
         serverInfo.value = {
           name: server.name,
@@ -150,7 +151,7 @@ export default {
         
         // 获取最新监控数据
         try {
-          const latestData = await vpsAPI.getServerData(serverName.value)
+          const latestData = await apiClient.getServerData(serverName.value, 1)
           if (latestData && latestData.length > 0) {
             const latest = latestData[0]
             monitorData.value = {
