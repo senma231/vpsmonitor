@@ -174,6 +174,56 @@ get_public_ip() {
     hostname -I | awk '{print $1}'
 }
 
+# 强制重新注册到管理端
+force_reregister_server() {
+    log_info "强制重新注册服务器到管理端..."
+
+    local public_ip=$(get_public_ip)
+    local server_name="${SERVER_NAME:-$(hostname)}"
+    local location="${SERVER_LOCATION:-Auto-detected}"
+
+    # 构建注册数据
+    local register_data=$(cat << EOF
+{
+  "name": "$server_name",
+  "ip_address": "$public_ip",
+  "location": "$location",
+  "description": "Python Agent force re-registered"
+}
+EOF
+)
+
+    # 发送注册请求到专用的agent注册端点，强制使用IPv4
+    local response=""
+    if command -v curl &> /dev/null; then
+        response=$(curl -4 -s --connect-timeout 10 -X POST \
+            -H "Content-Type: application/json" \
+            -d "$register_data" \
+            "$DEFAULT_API_URL/api/agent/register" 2>/dev/null)
+    elif command -v wget &> /dev/null; then
+        response=$(wget -4 -qO- --timeout=10 \
+            --header="Content-Type: application/json" \
+            --post-data="$register_data" \
+            "$DEFAULT_API_URL/api/agent/register" 2>/dev/null)
+    fi
+
+    if [[ $? -eq 0 ]] && [[ -n "$response" ]]; then
+        log_success "服务器已重新注册到管理端"
+        log_info "服务器名称: $server_name"
+        log_info "IP地址: $public_ip"
+        log_info "管理端地址: $DEFAULT_WEB_URL"
+
+        # 重启Agent服务
+        if systemctl is-active --quiet "$SERVICE_NAME"; then
+            log_info "重启Agent服务..."
+            systemctl restart "$SERVICE_NAME"
+            log_success "Agent服务已重启"
+        fi
+    else
+        log_error "重新注册失败，请检查网络连接和管理端状态"
+    fi
+}
+
 # 自动注册到管理端
 auto_register_server() {
     if [[ "$AUTO_REGISTER" != "true" ]]; then
@@ -322,20 +372,42 @@ show_usage() {
     echo ""
 }
 
+# 显示帮助信息
+show_help() {
+    echo "VPS Monitor Python Agent 安装脚本"
+    echo ""
+    echo "用法:"
+    echo "  $0                    # 安装Agent"
+    echo "  $0 --reregister      # 重新注册到管理端"
+    echo "  $0 --help           # 显示帮助信息"
+    echo ""
+}
+
 # 主函数
 main() {
-    log_info "开始安装 VPS Monitor Python Agent..."
-    
-    check_permissions
-    check_python
-    install_dependencies
-    download_agent
-    create_config
-    create_service
-    start_service
-    
-    log_success "安装完成！"
-    show_usage
+    case "${1:-}" in
+        --reregister)
+            log_info "重新注册服务器到管理端..."
+            force_reregister_server
+            ;;
+        --help)
+            show_help
+            ;;
+        *)
+            log_info "开始安装 VPS Monitor Python Agent..."
+
+            check_permissions
+            check_python
+            install_dependencies
+            download_agent
+            create_config
+            create_service
+            start_service
+
+            log_success "安装完成！"
+            show_usage
+            ;;
+    esac
 }
 
 # 运行主函数
