@@ -46,22 +46,36 @@
       </a-table>
     </a-card>
 
-    <!-- 添加服务器模态框 -->
+    <!-- 添加/编辑服务器模态框 -->
     <a-modal
       v-model:visible="showAddModal"
-      title="添加服务器"
-      @ok="handleAddServer"
-      @cancel="showAddModal = false"
+      :title="isEditing ? '编辑服务器' : '添加服务器'"
+      @ok="isEditing ? handleEditServer() : handleAddServer()"
+      @cancel="cancelModal"
     >
       <a-form :model="newServer" layout="vertical">
         <a-form-item label="服务器名称" required>
           <a-input v-model="newServer.name" placeholder="请输入服务器名称" />
         </a-form-item>
         <a-form-item label="IP地址" required>
-          <a-input v-model="newServer.ip" placeholder="请输入IP地址" />
+          <a-input
+            v-model="newServer.ip"
+            placeholder="请输入IP地址"
+            :disabled="isEditing && editingServer?.is_agent"
+          />
         </a-form-item>
         <a-form-item label="位置">
           <a-input v-model="newServer.location" placeholder="请输入服务器位置" />
+        </a-form-item>
+        <a-form-item label="到期时间">
+          <a-date-picker
+            v-model="newServer.expiry_date"
+            placeholder="请选择到期时间"
+            style="width: 100%"
+          />
+        </a-form-item>
+        <a-form-item label="购买地址">
+          <a-input v-model="newServer.purchase_url" placeholder="请输入购买地址" />
         </a-form-item>
         <a-form-item label="备注">
           <a-textarea v-model="newServer.description" placeholder="请输入备注信息" />
@@ -85,12 +99,16 @@ export default {
   setup() {
     const loading = ref(false)
     const showAddModal = ref(false)
+    const isEditing = ref(false)
+    const editingServer = ref(null)
     const servers = ref([])
     const newServer = ref({
       name: '',
       ip: '',
       location: '',
-      description: ''
+      description: '',
+      expiry_date: null,
+      purchase_url: ''
     })
     
     const pagination = ref({
@@ -163,6 +181,20 @@ export default {
       refreshList()
     }
     
+    const cancelModal = () => {
+      showAddModal.value = false
+      isEditing.value = false
+      editingServer.value = null
+      newServer.value = {
+        name: '',
+        ip: '',
+        location: '',
+        description: '',
+        expiry_date: null,
+        purchase_url: ''
+      }
+    }
+
     const handleAddServer = async () => {
       try {
         // 验证必填字段
@@ -180,6 +212,8 @@ export default {
           ip_address: newServer.value.ip,
           location: newServer.value.location || '',
           description: newServer.value.description || '',
+          expiry_date: newServer.value.expiry_date,
+          purchase_url: newServer.value.purchase_url || '',
           monitor_method: 'both', // 默认使用混合监控
           status: 'unknown'
         }
@@ -194,13 +228,7 @@ export default {
         })
 
         // 关闭模态框并重置表单
-        showAddModal.value = false
-        newServer.value = {
-          name: '',
-          ip: '',
-          location: '',
-          description: ''
-        }
+        cancelModal()
 
         // 刷新列表
         await refreshList()
@@ -214,45 +242,87 @@ export default {
     }
     
     const editServer = (server) => {
+      // 设置编辑模式
+      isEditing.value = true
+      editingServer.value = server
+
       // 填充编辑表单
       newServer.value = {
         name: server.name,
         ip: server.ip_address,
         location: server.location,
-        description: server.region || ''
+        description: server.description || '',
+        expiry_date: server.expiry_date || null,
+        purchase_url: server.purchase_url || ''
       }
 
       // 显示模态框
       showAddModal.value = true
     }
 
-    const deleteServer = async (server) => {
-      Modal.confirm({
-        title: '确认删除',
-        content: `确定要删除服务器 "${server.name}" 吗？此操作不可恢复。`,
-        okText: '删除',
-        cancelText: '取消',
-        okButtonProps: { status: 'danger' },
-        onOk: async () => {
-          try {
-            await vpsAPI.deleteServer(server.name)
-
-            Notification.success({
-              title: '删除成功',
-              content: `服务器 "${server.name}" 已删除`
-            })
-
-            // 刷新列表
-            await refreshList()
-          } catch (error) {
-            console.error('Delete server error:', error)
-            Notification.error({
-              title: '删除失败',
-              content: error.message || '服务器删除失败，请重试'
-            })
-          }
+    const handleEditServer = async () => {
+      try {
+        // 验证必填字段
+        if (!newServer.value.name) {
+          window.$notification?.error({
+            title: '编辑失败',
+            content: '请填写服务器名称'
+          })
+          return
         }
-      })
+
+        // 调用API更新服务器
+        const serverData = {
+          name: newServer.value.name,
+          location: newServer.value.location || '',
+          description: newServer.value.description || '',
+          expiry_date: newServer.value.expiry_date,
+          purchase_url: newServer.value.purchase_url || ''
+        }
+
+        console.log('Updating server:', editingServer.value.name, serverData)
+        await apiClient.updateServer(editingServer.value.name, serverData)
+
+        // 显示成功消息
+        window.$notification?.success({
+          title: '编辑成功',
+          content: `服务器 ${newServer.value.name} 已更新`
+        })
+
+        // 关闭模态框并重置表单
+        cancelModal()
+
+        // 刷新列表
+        await refreshList()
+      } catch (error) {
+        console.error('Failed to edit server:', error)
+        window.$notification?.error({
+          title: '编辑失败',
+          content: error.message || '服务器编辑失败，请重试'
+        })
+      }
+    }
+
+    const deleteServer = async (server) => {
+      if (confirm(`确定要删除服务器 "${server.name}" 吗？此操作不可恢复。`)) {
+        try {
+          await apiClient.deleteServer(server.name)
+
+          window.$notification?.success({
+            title: '删除成功',
+            content: `服务器 "${server.name}" 已删除`
+          })
+
+          // 刷新列表
+          await refreshList()
+        } catch (error) {
+          console.error('Delete server error:', error)
+          window.$notification?.error({
+            title: '删除失败',
+            content: error.message || '服务器删除失败，请重试'
+          })
+        }
+      }
     }
     
     onMounted(() => {
@@ -262,6 +332,8 @@ export default {
     return {
       loading,
       showAddModal,
+      isEditing,
+      editingServer,
       servers,
       newServer,
       pagination,
@@ -269,8 +341,10 @@ export default {
       refreshList,
       handlePageChange,
       handleAddServer,
+      handleEditServer,
       editServer,
-      deleteServer
+      deleteServer,
+      cancelModal
     }
   }
 }

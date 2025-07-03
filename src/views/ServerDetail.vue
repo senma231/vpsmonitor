@@ -148,11 +148,29 @@ export default {
           status: server.status
         }
         
-        monitorData.value = {
-          cpu: Math.floor(Math.random() * 100),
-          memory: Math.floor(Math.random() * 100),
-          disk: Math.floor(Math.random() * 100),
-          ping: Math.floor(Math.random() * 100) + 10
+        // 获取最新监控数据
+        try {
+          const latestData = await vpsAPI.getServerData(serverName.value)
+          if (latestData && latestData.length > 0) {
+            const latest = latestData[0]
+            monitorData.value = {
+              cpu: Math.round(latest.cpu_usage || 0),
+              memory: Math.round(latest.memory_usage || 0),
+              disk: Math.round(latest.disk_usage || 0),
+              ping: Math.round(latest.network_latency || 0)
+            }
+          } else {
+            // 如果没有监控数据，显示0
+            monitorData.value = {
+              cpu: 0,
+              memory: 0,
+              disk: 0,
+              ping: 0
+            }
+          }
+        } catch (dataError) {
+          console.error('Failed to load monitor data:', dataError)
+          // 保持默认值
         }
       } catch (error) {
         console.error('Failed to load server data:', error)

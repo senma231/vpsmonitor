@@ -49,8 +49,8 @@
             <div class="server-header">
               <div class="server-name">{{ server.name }}</div>
               <div class="server-status">
-                <span :class="['status-dot', server.status]"></span>
-                <span>{{ server.status === 'online' ? '在线' : '离线' }}</span>
+                <span :class="['status-dot', getStatusClass(server.status)]"></span>
+                <span>{{ getStatusText(server.status) }}</span>
               </div>
             </div>
             <div class="server-info">
@@ -134,6 +134,24 @@ export default {
       return new Date().toLocaleString('zh-CN')
     })
     
+    const getStatusClass = (status) => {
+      switch (status) {
+        case 'online': return 'success'
+        case 'offline': return 'error'
+        case 'error': return 'error'
+        default: return ''
+      }
+    }
+
+    const getStatusText = (status) => {
+      switch (status) {
+        case 'online': return '在线'
+        case 'offline': return '离线'
+        case 'error': return '错误'
+        default: return '未知'
+      }
+    }
+
     const refreshData = async () => {
       loading.value = true
       try {
@@ -191,7 +209,9 @@ export default {
       stats,
       recentServers,
       lastUpdate,
-      refreshData
+      refreshData,
+      getStatusClass,
+      getStatusText
     }
   }
 }
